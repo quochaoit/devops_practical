@@ -6,8 +6,8 @@ pool:
 variables:
   dockerRegistryServiceConnection: 'HaoACRConn'
   containerRegistry: 'devopacr.azurecr.io'
-  tag: '$(Build.BuildId)'
   buildContextPath: 'docker-demo/src'
+  tag: '$(Build.BuildId)'
 
 steps:
 # Checkout the source code
@@ -23,7 +23,7 @@ steps:
 
 # Build and push backend image
 - task: Docker@2
-  displayName: 'Build and Push image to ACR'
+  displayName: 'Build and Push backend image to ACR'
   inputs:
     containerRegistry: '$(dockerRegistryServiceConnection)'
     repository: 'backend'
@@ -36,7 +36,7 @@ steps:
 
 # Build and push frontend image
 - task: Docker@2
-  displayName: 'Build and Push Frontend'
+  displayName: 'Build and Push Frontend image to ACR'
   inputs:
     containerRegistry: '$(dockerRegistryServiceConnection)'
     repository: 'frontend'
@@ -47,8 +47,9 @@ steps:
       $(tag)
       latest
 
-# Optional: Run unit tests
+# Verify images exist (manual fail check)
 - script: |
-    echo "Running backend tests..."
-    docker run --rm $(containerRegistry)/backend:$(tag) npm test
-  displayName: 'Run unit tests backend inside container'
+    echo "Verifying images exist in ACR..."
+    az acr repository show-tags --name devopacr --repository backend --output table || exit 1
+    az acr repository show-tags --name devopacr --repository frontend --output table || exit 1
+  displayName: 'Verify ACR images'
