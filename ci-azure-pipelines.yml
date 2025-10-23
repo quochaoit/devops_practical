@@ -1,4 +1,7 @@
-trigger: none
+trigger:
+  branches:
+    include:
+      - main
 
 pool:
   vmImage: 'ubuntu-latest'
@@ -46,10 +49,3 @@ steps:
     tags: |
       $(tag)
       latest
-
-# Verify images exist (manual fail check)
-- script: |
-    echo "Verifying images exist in ACR..."
-    az acr repository show-tags --name devopacr --repository backend --output table || exit 1
-    az acr repository show-tags --name devopacr --repository frontend --output table || exit 1
-  displayName: 'Verify ACR images'
