@@ -5,15 +5,14 @@ pool:
 
 variables:
   dockerRegistryServiceConnection: 'HaoACRConn'
-  imageRepository: 'backend'
   containerRegistry: 'devopacr.azurecr.io'
   tag: '$(Build.BuildId)'
   buildContextPath: 'docker-demo/src'
 
 steps:
 # Checkout the source code
-- task: Checkout@1
-  displayName: 'Checkout code'
+- checkout: self
+  displayName: 'Checkout source code'
 
 # Log in to Azure Container Registry
 - task: Docker@2
@@ -27,7 +26,7 @@ steps:
   displayName: 'Build and Push image to ACR'
   inputs:
     containerRegistry: '$(dockerRegistryServiceConnection)'
-    repository: '$(imageRepository)'
+    repository: 'backend'
     command: 'buildAndPush'
     Dockerfile: '$(buildContextPath)/backend/Dockerfile'
     buildContext: '$(buildContextPath)/backend'
@@ -50,6 +49,6 @@ steps:
 
 # Optional: Run unit tests
 - script: |
-    echo "Running tests..."
-    docker run --rm $(containerRegistry)/$(imageRepository):$(tag) npm test
-  displayName: 'Run unit tests inside container'
+    echo "Running backend tests..."
+    docker run --rm $(containerRegistry)/backend:$(tag) npm test
+  displayName: 'Run unit tests backend inside container'
