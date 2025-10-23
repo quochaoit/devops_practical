@@ -1,0 +1,55 @@
+trigger: none
+
+pool:
+  vmImage: 'ubuntu-latest'
+
+variables:
+  dockerRegistryServiceConnection: 'HaoACRConn'
+  imageRepository: 'backend'
+  containerRegistry: 'devopacr.azurecr.io'
+  tag: '$(Build.BuildId)'
+  buildContextPath: 'docker-demo/src'
+
+steps:
+# Checkout the source code
+- task: Checkout@1
+  displayName: 'Checkout code'
+
+# Log in to Azure Container Registry
+- task: Docker@2
+  displayName: 'Login to ACR'
+  inputs:
+    command: 'login'
+    containerRegistry: '$(dockerRegistryServiceConnection)'
+
+# Build and push backend image
+- task: Docker@2
+  displayName: 'Build and Push image to ACR'
+  inputs:
+    containerRegistry: '$(dockerRegistryServiceConnection)'
+    repository: '$(imageRepository)'
+    command: 'buildAndPush'
+    Dockerfile: '$(buildContextPath)/backend/Dockerfile'
+    buildContext: '$(buildContextPath)/backend'
+    tags: |
+      $(tag)
+      latest
+
+# Build and push frontend image
+- task: Docker@2
+  displayName: 'Build and Push Frontend'
+  inputs:
+    containerRegistry: '$(dockerRegistryServiceConnection)'
+    repository: 'frontend'
+    command: 'buildAndPush'
+    Dockerfile: '$(buildContextPath)/frontend/Dockerfile'
+    buildContext: '$(buildContextPath)/frontend'
+    tags: |
+      $(tag)
+      latest
+
+# Optional: Run unit tests
+- script: |
+    echo "Running tests..."
+    docker run --rm $(containerRegistry)/$(imageRepository):$(tag) npm test
+  displayName: 'Run unit tests inside container'
