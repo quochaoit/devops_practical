@@ -8,13 +8,13 @@ pool:
 
 # variables:
 #   dockerRegistryServiceConnection: 'HaoACRConn'
-#   buildContextPath: 'docker-demo/src'
+#   buildContextPath: 'src'
 #   tag: '$(Build.BuildId)'
 
 variables:
   acrName: 'devopacr'
   azureSubscriptionServiceConnection: HaoSubscriptionConn
-  buildContextPath: 'docker-demo/src'
+  buildContextPath: 'src'
   tag: '$(Build.BuildId)'
 
 stages:
