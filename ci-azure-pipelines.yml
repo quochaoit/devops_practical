@@ -68,39 +68,43 @@ stages:
           echo "Logging into ACR..."
           az acr login --name $(acrName)
 
-    - task: Bash@3
-      displayName: Build and push Docker image for backend
+    # - task: Bash@3
+    #   displayName: Build and push Docker image for backend
+    #   inputs:
+    #     targetType: 'inline'
+    #     script: |
+    #       echo "Building backend Docker image..."
+    #       cd $(buildContextPath)
+    #       docker build ./backend -t $(acrName).azurecr.io/backend:$(tag)
+    #       docker tag $(acrName).azurecr.io/backend:$(tag) $(acrName).azurecr.io/backend:latest
+
+    #       echo "Pushing backend Docker image to ACR..."
+    #       docker push $(acrName).azurecr.io/backend:$(Build.BuildId)
+    #       docker push $(acrName).azurecr.io/backend:latest
+
+    # - task: Bash@3
+    #   displayName: Build and push Docker image for frontend
+    #   inputs:
+    #     targetType: 'inline'
+    #     script: |
+    #       echo "Building frontend Docker image..."
+    #       cd $(buildContextPath)
+    #       docker build ./frontend -t $(acrName).azurecr.io/frontend:$(tag)
+    #       docker tag $(acrName).azurecr.io/frontend:$(tag) $(acrName).azurecr.io/frontend:latest
+
+    #       echo "Pushing frontend Docker image to ACR..."
+    #       docker push $(acrName).azurecr.io/frontend:$(Build.BuildId)
+    #       docker push $(acrName).azurecr.io/frontend:latest
+
+    - task: AzureCLI@2
+      displayName: Verify images in ACR
       inputs:
-        targetType: 'inline'
-        script: |
-          echo "Building backend Docker image..."
-          cd $(buildContextPath)
-          docker build ./backend -t $(acrName).azurecr.io/backend:$(tag)
-          docker tag $(acrName).azurecr.io/backend:$(tag) $(acrName).azurecr.io/backend:latest
-
-          echo "Pushing backend Docker image to ACR..."
-          docker push $(acrName).azurecr.io/backend:$(Build.BuildId)
-          docker push $(acrName).azurecr.io/backend:latest
-
-    - task: Bash@3
-      displayName: Build and push Docker image for frontend
-      inputs:
-        targetType: 'inline'
-        script: |
-          echo "Building frontend Docker image..."
-          cd $(buildContextPath)
-          docker build ./frontend -t $(acrName).azurecr.io/frontend:$(tag)
-          docker tag $(acrName).azurecr.io/frontend:$(tag) $(acrName).azurecr.io/frontend:latest
-
-          echo "Pushing frontend Docker image to ACR..."
-          docker push $(acrName).azurecr.io/frontend:$(Build.BuildId)
-          docker push $(acrName).azurecr.io/frontend:latest
-
-    - task: Bash@3
-      displayName: Verify image pushed
-      inputs:
-        targetType: 'inline'
-        script: |
-          echo "Verifying images in ACR..."
+        azureSubscription: 'HaoSubscriptionConn'
+        scriptType: 'bash'
+        scriptLocation: 'inlineScript'
+        inlineScript: |
+          echo "Verifying backend image tags in ACR..."
           az acr repository show-tags --name $(acrName) --repository backend --output table
+
+          echo "Verifying frontend image tags in ACR..."
           az acr repository show-tags --name $(acrName) --repository frontend --output table
