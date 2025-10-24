@@ -14,7 +14,7 @@ pool:
 variables:
   acrName: 'devopacr'
   buildContextPath: 'docker-demo/src'
-  tag: '$(Build.BuildId)'
+  tag: '982'
 
 stages:
 - stage: CIStage
