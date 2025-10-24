@@ -11,40 +11,46 @@ variables:
   buildContextPath: 'docker-demo/src'
   tag: '$(Build.BuildId)'
 
-steps:
-# Checkout the source code
-- checkout: self
-  displayName: 'Checkout source code'
+stages:
+- stage: CIStage
+  displayName: CI stage
 
-# Log in to Azure Container Registry
-- task: Docker@2
-  displayName: 'Login to ACR'
-  inputs:
-    command: 'login'
-    containerRegistry: '$(dockerRegistryServiceConnection)'
+  jobs:
+  - job: BuildAndPush
+    displayName: Build & Push Image
 
-# Build and push backend image
-- task: Docker@2
-  displayName: 'Build and Push backend image to ACR'
-  inputs:
-    containerRegistry: '$(dockerRegistryServiceConnection)'
-    repository: 'backend'
-    command: 'buildAndPush'
-    Dockerfile: '$(buildContextPath)/backend/Dockerfile'
-    buildContext: '$(buildContextPath)/backend'
-    tags: |
-      $(tag)
-      latest
+    steps:
+    - checkout: self
+      displayName: 'Checkout source code'
 
-# Build and push frontend image
-- task: Docker@2
-  displayName: 'Build and Push Frontend image to ACR'
-  inputs:
-    containerRegistry: '$(dockerRegistryServiceConnection)'
-    repository: 'frontend'
-    command: 'buildAndPush'
-    Dockerfile: '$(buildContextPath)/frontend/Dockerfile'
-    buildContext: '$(buildContextPath)/frontend'
-    tags: |
-      $(tag)
-      latest
+    - task: Docker@2
+      displayName: 'Login to ACR'
+      inputs:
+        command: 'login'
+        containerRegistry: '$(dockerRegistryServiceConnection)'
+
+    - task: Docker@2
+      displayName: 'Build and Push backend image to ACR'
+      inputs:
+        containerRegistry: '$(dockerRegistryServiceConnection)'
+        repository: 'backend'
+        command: 'buildAndPush'
+        Dockerfile: '$(buildContextPath)/backend/Dockerfile'
+        buildContext: '$(buildContextPath)/backend'
+        tags: |
+          $(tag)
+          latest
+
+    # Build and push frontend image
+    - task: Docker@2
+      displayName: 'Build and Push Frontend image to ACR'
+      inputs:
+        containerRegistry: '$(dockerRegistryServiceConnection)'
+        repository: 'frontend'
+        command: 'buildAndPush'
+        Dockerfile: '$(buildContextPath)/frontend/Dockerfile'
+        buildContext: '$(buildContextPath)/frontend'
+        tags: |
+          $(tag)
+          latest
+
