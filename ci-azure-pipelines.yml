@@ -97,14 +97,24 @@ stages:
     #       docker push $(acrName).azurecr.io/frontend:latest
 
     - task: AzureCLI@2
-      displayName: Verify images in ACR
+      displayName: 'Verify Docker image tags in ACR'
       inputs:
         azureSubscription: 'HaoSubscriptionConn'
         scriptType: 'bash'
         scriptLocation: 'inlineScript'
         inlineScript: |
-          echo "Verifying backend image tags in ACR..."
-          az acr repository show-tags --name $(acrName) --repository backend --output table
+          echo "Query manifests that contain both tags"
+          RESULTS=$(az acr repository show-manifests \
+            --name $(acrName) \
+            --repository backend \
+            --query "[?contains(tags, '$(tag)') && contains(tags, 'latest')].[digest,lastUpdateTime]" \
+            -o tsv)
 
-          echo "Verifying frontend image tags in ACR..."
-          az acr repository show-tags --name $(acrName) --repository frontend --output table
+          if [ -z "$RESULTS" ]; then
+            echo "ERROR: No manifest found with both tags '$(tag)' and 'latest'!"
+            exit 1
+          else
+            echo "SUCCESS: Found manifest(s) with both tags:"
+            echo -e "TagID\tLastModified"
+            echo "$RESULTS"
+          fi
