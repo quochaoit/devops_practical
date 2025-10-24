@@ -13,8 +13,9 @@ pool:
 
 variables:
   acrName: 'devopacr'
+  azureSubscriptionServiceConnection: HaoSubscriptionConn
   buildContextPath: 'docker-demo/src'
-  tag: '982'
+  tag: '$(Build.BuildId)'
 
 stages:
 - stage: CIStage
@@ -61,60 +62,37 @@ stages:
     - task: AzureCLI@2
       displayName: Login to Azure and ACR
       inputs:
-        azureSubscription: 'HaoSubscriptionConn' # connection to azure subscription
+        azureSubscription: '$(azureSubscriptionServiceConnection)'
         scriptType: 'bash'
         scriptLocation: 'inlineScript'
         inlineScript: |
           echo "Logging into ACR..."
           az acr login --name $(acrName)
 
-    # - task: Bash@3
-    #   displayName: Build and push Docker image for backend
-    #   inputs:
-    #     targetType: 'inline'
-    #     script: |
-    #       echo "Building backend Docker image..."
-    #       cd $(buildContextPath)
-    #       docker build ./backend -t $(acrName).azurecr.io/backend:$(tag)
-    #       docker tag $(acrName).azurecr.io/backend:$(tag) $(acrName).azurecr.io/backend:latest
-
-    #       echo "Pushing backend Docker image to ACR..."
-    #       docker push $(acrName).azurecr.io/backend:$(Build.BuildId)
-    #       docker push $(acrName).azurecr.io/backend:latest
-
-    # - task: Bash@3
-    #   displayName: Build and push Docker image for frontend
-    #   inputs:
-    #     targetType: 'inline'
-    #     script: |
-    #       echo "Building frontend Docker image..."
-    #       cd $(buildContextPath)
-    #       docker build ./frontend -t $(acrName).azurecr.io/frontend:$(tag)
-    #       docker tag $(acrName).azurecr.io/frontend:$(tag) $(acrName).azurecr.io/frontend:latest
-
-    #       echo "Pushing frontend Docker image to ACR..."
-    #       docker push $(acrName).azurecr.io/frontend:$(Build.BuildId)
-    #       docker push $(acrName).azurecr.io/frontend:latest
-
-    - task: AzureCLI@2
-      displayName: 'Verify Docker image tags in ACR'
+    - task: Bash@3
+      displayName: Build and push Docker image for backend
       inputs:
-        azureSubscription: 'HaoSubscriptionConn'
-        scriptType: 'bash'
-        scriptLocation: 'inlineScript'
-        inlineScript: |
-          echo "Query manifests that contain both tags"
-          RESULTS=$(az acr repository show-manifests \
-            --name $(acrName) \
-            --repository backend \
-            --query "[?contains(tags, '$(tag)') && contains(tags, 'latest')].[tags,lastUpdateTime]" \
-            -o tsv)
+        targetType: 'inline'
+        script: |
+          echo "Building backend Docker image..."
+          cd $(buildContextPath)
+          docker build ./backend -t $(acrName).azurecr.io/backend:$(tag)
+          docker tag $(acrName).azurecr.io/backend:$(tag) $(acrName).azurecr.io/backend:latest
 
-          if [ -z "$RESULTS" ]; then
-            echo "ERROR: No manifest found with both tags '$(tag)' and 'latest'!"
-            exit 1
-          else
-            echo "SUCCESS: Found manifest(s) with both tags '$(tag)' and 'latest'!"
-            echo -e "Tag\tLastModified"
-            echo "$RESULTS"
-          fi
+          echo "Pushing backend Docker image to ACR..."
+          docker push $(acrName).azurecr.io/backend:$(Build.BuildId)
+          docker push $(acrName).azurecr.io/backend:latest
+
+    - task: Bash@3
+      displayName: Build and push Docker image for frontend
+      inputs:
+        targetType: 'inline'
+        script: |
+          echo "Building frontend Docker image..."
+          cd $(buildContextPath)
+          docker build ./frontend -t $(acrName).azurecr.io/frontend:$(tag)
+          docker tag $(acrName).azurecr.io/frontend:$(tag) $(acrName).azurecr.io/frontend:latest
+
+          echo "Pushing frontend Docker image to ACR..."
+          docker push $(acrName).azurecr.io/frontend:$(Build.BuildId)
+          docker push $(acrName).azurecr.io/frontend:latest
