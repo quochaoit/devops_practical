@@ -107,14 +107,14 @@ stages:
           RESULTS=$(az acr repository show-manifests \
             --name $(acrName) \
             --repository backend \
-            --query "[?contains(tags, '$(tag)') && contains(tags, 'latest')].[digest,lastUpdateTime]" \
+            --query "[?contains(tags, '$(tag)') && contains(tags, 'latest')].[tags,lastUpdateTime]" \
             -o tsv)
 
           if [ -z "$RESULTS" ]; then
             echo "ERROR: No manifest found with both tags '$(tag)' and 'latest'!"
             exit 1
           else
-            echo "SUCCESS: Found manifest(s) with both tags:"
-            echo -e "TagID\tLastModified"
+            echo "SUCCESS: Found manifest(s) with both tags '$(tag)' and 'latest'!"
+            echo -e "Tag\tLastModified"
             echo "$RESULTS"
           fi
