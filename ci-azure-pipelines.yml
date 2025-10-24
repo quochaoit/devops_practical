@@ -6,8 +6,13 @@ trigger: none
 pool:
   vmImage: 'ubuntu-latest'
 
+# variables:
+#   dockerRegistryServiceConnection: 'HaoACRConn'
+#   buildContextPath: 'docker-demo/src'
+#   tag: '$(Build.BuildId)'
+
 variables:
-  dockerRegistryServiceConnection: 'HaoACRConn'
+  acrName: 'devopacr'
   buildContextPath: 'docker-demo/src'
   tag: '$(Build.BuildId)'
 
@@ -23,34 +28,56 @@ stages:
     - checkout: self
       displayName: 'Checkout source code'
 
-    - task: Docker@2
-      displayName: 'Login to ACR'
-      inputs:
-        command: 'login'
-        containerRegistry: '$(dockerRegistryServiceConnection)'
+    # - task: Docker@2
+    #   displayName: 'Login to ACR'
+    #   inputs:
+    #     command: 'login'
+    #     containerRegistry: '$(dockerRegistryServiceConnection)'
 
-    - task: Docker@2
-      displayName: 'Build and Push backend image to ACR'
-      inputs:
-        containerRegistry: '$(dockerRegistryServiceConnection)'
-        repository: 'backend'
-        command: 'buildAndPush'
-        Dockerfile: '$(buildContextPath)/backend/Dockerfile'
-        buildContext: '$(buildContextPath)/backend'
-        tags: |
-          $(tag)
-          latest
+    # - task: Docker@2
+    #   displayName: 'Build and Push backend image to ACR'
+    #   inputs:
+    #     containerRegistry: '$(dockerRegistryServiceConnection)'
+    #     repository: 'backend'
+    #     command: 'buildAndPush'
+    #     Dockerfile: '$(buildContextPath)/backend/Dockerfile'
+    #     buildContext: '$(buildContextPath)/backend'
+    #     tags: |
+    #       $(tag)
+    #       latest
 
-    # Build and push frontend image
-    - task: Docker@2
-      displayName: 'Build and Push Frontend image to ACR'
-      inputs:
-        containerRegistry: '$(dockerRegistryServiceConnection)'
-        repository: 'frontend'
-        command: 'buildAndPush'
-        Dockerfile: '$(buildContextPath)/frontend/Dockerfile'
-        buildContext: '$(buildContextPath)/frontend'
-        tags: |
-          $(tag)
-          latest
+    # - task: Docker@2
+    #   displayName: 'Build and Push Frontend image to ACR'
+    #   inputs:
+    #     containerRegistry: '$(dockerRegistryServiceConnection)'
+    #     repository: 'frontend'
+    #     command: 'buildAndPush'
+    #     Dockerfile: '$(buildContextPath)/frontend/Dockerfile'
+    #     buildContext: '$(buildContextPath)/frontend'
+    #     tags: |
+    #       $(tag)
+    #       latest
 
+    - task: AzureCLI@2
+      displayName: Login to Azure and ACR
+      inputs:
+        azureSubscription: 'azure-connection'
+        scriptType: 'bash'
+        scriptLocation: 'inlineScript'
+        inlineScript: |
+          echo "Logging into ACR..."
+          az acr login --name $(acrName)
+
+    - task: Bash@3
+      displayName: Build and push Docker image for backend
+      inputs:
+        targetType: 'inline'
+        script: |
+          echo "Building backend Docker image..."
+          cd $(buildContextPath)
+          docker build ./backend -t $(acrName).azurecr.io/backend:$(tag)
+          docker tag $(acrName).azurecr.io/backend:$(tag) $(acrName).azurecr.io/backend:latest
+
+          echo "Pushing backend Docker image to ACR..."
+          docker push $(acrName).azurecr.io/backend:$(Build.BuildId)
+          docker push $(acrName).azurecr.io/backend:latest
