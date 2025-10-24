@@ -61,7 +61,7 @@ stages:
     - task: AzureCLI@2
       displayName: Login to Azure and ACR
       inputs:
-        azureSubscription: 'azure-connection'
+        azureSubscription: 'HaoSubscriptionConn' # connection to azure subscription
         scriptType: 'bash'
         scriptLocation: 'inlineScript'
         inlineScript: |
